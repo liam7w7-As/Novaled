@@ -911,10 +911,670 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    if (size.width >= 960) {
+      return _buildDesktopDashboardLayout(context);
+    }
     return _buildMobileLayout(context);
   }
+
+  Widget _buildDesktopSidebarItem({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+    required Color primaryColor,
+    required bool isDark,
+    String? badge,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          hoverColor: primaryColor.withOpacity(0.08),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isActive ? primaryColor.withOpacity(0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: isActive
+                  ? Border.all(color: primaryColor.withOpacity(0.35), width: 1)
+                  : Border.all(color: Colors.transparent, width: 1),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: isActive
+                      ? primaryColor
+                      : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                      color: isActive
+                          ? (isDark ? Colors.white : primaryColor)
+                          : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                    ),
+                  ),
+                ),
+                if (badge != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badge,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopDashboardLayout(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color primaryPurple = Theme.of(context).primaryColor;
+    final Color bgColor = isDark ? const Color(0xFF11130E) : const Color(0xFFF8FAFC);
+    final Color cardBgColor = isDark ? const Color(0xFF1E211A) : Colors.white;
+    final Color borderColor = isDark ? Colors.white.withOpacity(0.07) : const Color(0xFFE2E8F0);
+    
+    final String userNameRaw = session.userName ?? 'Usuario';
+    final String formattedUserName = userNameRaw.isNotEmpty
+        ? (userNameRaw[0].toUpperCase() + userNameRaw.substring(1).toLowerCase())
+        : userNameRaw;
+
+    final ventasEfectivas = _getVentasEfectivas();
+    final double totalVentasMonto = ventasEfectivas.fold(0.0, (acc, item) {
+      final total = double.tryParse((item['total'] ?? item['monto'] ?? 0).toString()) ?? 0.0;
+      return acc + total;
+    });
+
+    final double totalCotizadoMonto = _cotizaciones.fold(0.0, (acc, item) {
+      final total = double.tryParse((item['total'] ?? item['monto'] ?? 0).toString()) ?? 0.0;
+      return acc + total;
+    });
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: Row(
+        children: [
+          // 1. BARRA LATERAL (SIDEBAR DESKTOP)
+          Container(
+            width: 270,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF161913) : Colors.white,
+              border: Border(right: BorderSide(color: borderColor, width: 1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Logo de Empresa en Cabecera de Sidebar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                  child: Row(
+                    children: [
+                      _buildHeaderLogo(isDark),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: Colors.transparent),
+                const SizedBox(height: 8),
+
+                // Lista de Secciones
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                        child: Text(
+                          'MENÚ PRINCIPAL',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.1,
+                            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ),
+                      _buildDesktopSidebarItem(
+                        icon: Icons.dashboard_rounded,
+                        label: 'Inicio',
+                        isActive: true,
+                        onTap: () {},
+                        primaryColor: primaryPurple,
+                        isDark: isDark,
+                      ),
+                      _buildDesktopSidebarItem(
+                        icon: Icons.shopping_cart_rounded,
+                        label: 'Cotizaciones',
+                        badge: '',
+                        isActive: false,
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/cotizaciones',
+                            arguments: {'tipoVenta': 'cotizacion'},
+                          ).then((_) => _loadAll());
+                        },
+                        primaryColor: primaryPurple,
+                        isDark: isDark,
+                      ),
+                      _buildDesktopSidebarItem(
+                        icon: Icons.point_of_sale_rounded,
+                        label: 'Punto de Venta',
+                        badge: '',
+                        isActive: false,
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/cotizaciones',
+                            arguments: {'tipoVenta': 'punto_venta'},
+                          ).then((_) => _loadAll());
+                        },
+                        primaryColor: primaryPurple,
+                        isDark: isDark,
+                      ),
+                      _buildDesktopSidebarItem(
+                        icon: Icons.inventory_2_rounded,
+                        label: 'Inventario',
+                        isActive: false,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const local_inv.InventoryScreen()),
+                          ).then((_) => _loadAll());
+                        },
+                        primaryColor: primaryPurple,
+                        isDark: isDark,
+                      ),
+                      _buildDesktopSidebarItem(
+                        icon: Icons.people_alt_rounded,
+                        label: 'Clientes',
+                        isActive: false,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ClientsScreen()),
+                          ).then((_) => _loadAll());
+                        },
+                        primaryColor: primaryPurple,
+                        isDark: isDark,
+                      ),
+                      if (session.isAdmin) ...[
+                        const SizedBox(height: 14),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                          child: Text(
+                            'ADMINISTRACIÓN',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1,
+                              color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                        _buildDesktopSidebarItem(
+                          icon: Icons.badge_rounded,
+                          label: 'Personal / Vendedores',
+                          isActive: false,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const PersonalManageScreen()),
+                            ).then((_) => _loadAll());
+                          },
+                          primaryColor: primaryPurple,
+                          isDark: isDark,
+                        ),
+                        _buildDesktopSidebarItem(
+                          icon: Icons.tune_rounded,
+                          label: 'Personalización',
+                          isActive: false,
+                          onTap: () {
+                            Navigator.pushNamed(context, '/personalizacion').then((_) => _loadAll());
+                          },
+                          primaryColor: primaryPurple,
+                          isDark: isDark,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Footer de la Sidebar (Modo Oscuro + Usuario + Logout)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF131510) : const Color(0xFFF1F5F9),
+                    border: Border(top: BorderSide(color: borderColor, width: 1)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: primaryPurple.withOpacity(0.2),
+                            child: Text(
+                              formattedUserName.isNotEmpty ? formattedUserName[0].toUpperCase() : 'U',
+                              style: TextStyle(color: primaryPurple, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  formattedUserName,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  session.role.toString().split('.').last.toUpperCase(),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    color: primaryPurple,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                              size: 19,
+                              color: isDark ? Colors.amber : const Color(0xFF64748B),
+                            ),
+                            tooltip: isDark ? 'Modo Claro' : 'Modo Oscuro',
+                            onPressed: () => NovaledApp.of(context).toggleTheme(!isDark),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.logout_rounded, size: 19, color: Colors.redAccent),
+                            tooltip: 'Cerrar Sesión',
+                            onPressed: () => Session.forceLogout(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 2. ÁREA PRINCIPAL DE CONTENIDO (MAIN DESKTOP DASHBOARD)
+          Expanded(
+            child: Column(
+              children: [
+                // Top Bar de Contenido
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF161913) : Colors.white,
+                    border: Border(bottom: BorderSide(color: borderColor, width: 1)),
+                  ),
+                  child: Row(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '¡Bienvenido, !',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          Text(
+                            'Panel de control de Novaled Sistema',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      if (_isSyncing)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: primaryPurple.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: primaryPurple),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Sincronizando...',
+                                style: GoogleFonts.poppins(fontSize: 12, color: primaryPurple, fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(width: 14),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                        label: Text('Nueva Cotización', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryPurple,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/cotizaciones',
+                            arguments: {'tipoVenta': 'cotizacion'},
+                          ).then((_) => _loadAll());
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Scroll del Dashboard
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // GRID DE 4 TARJETAS DE MÉTRICAS MODERNAS
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            int crossAxisCount = constraints.maxWidth > 1100 ? 4 : 2;
+                            return GridView.count(
+                              crossAxisCount: crossAxisCount,
+                              crossAxisSpacing: 20,
+                              mainAxisSpacing: 20,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              childAspectRatio: constraints.maxWidth > 1100 ? 1.6 : 2.0,
+                              children: [
+                                _buildDesktopMetricCard(
+                                  title: 'Cotizaciones',
+                                  value: '',
+                                  subValue: 'Total:  Bs',
+                                  icon: Icons.shopping_cart_rounded,
+                                  accentColor: primaryPurple,
+                                  cardBg: cardBgColor,
+                                  borderColor: borderColor,
+                                  isDark: isDark,
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/cotizaciones',
+                                      arguments: {'tipoVenta': 'cotizacion'},
+                                    ).then((_) => _loadAll());
+                                  },
+                                ),
+                                _buildDesktopMetricCard(
+                                  title: 'Punto de Venta',
+                                  value: '',
+                                  subValue: 'Cobrado:  Bs',
+                                  icon: Icons.point_of_sale_rounded,
+                                  accentColor: const Color(0xFF10B981),
+                                  cardBg: cardBgColor,
+                                  borderColor: borderColor,
+                                  isDark: isDark,
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/cotizaciones',
+                                      arguments: {'tipoVenta': 'punto_venta'},
+                                    ).then((_) => _loadAll());
+                                  },
+                                ),
+                                _buildDesktopMetricCard(
+                                  title: 'Inventario / Catálogo',
+                                  value: '',
+                                  subValue: 'Artículos activos',
+                                  icon: Icons.inventory_2_rounded,
+                                  accentColor: const Color(0xFFF59E0B),
+                                  cardBg: cardBgColor,
+                                  borderColor: borderColor,
+                                  isDark: isDark,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const local_inv.InventoryScreen()),
+                                    ).then((_) => _loadAll());
+                                  },
+                                ),
+                                _buildDesktopMetricCard(
+                                  title: 'Directorio Clientes',
+                                  value: '',
+                                  subValue: 'Clientes registrados',
+                                  icon: Icons.people_alt_rounded,
+                                  accentColor: const Color(0xFF00ADEF),
+                                  cardBg: cardBgColor,
+                                  borderColor: borderColor,
+                                  isDark: isDark,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const ClientsScreen()),
+                                    ).then((_) => _loadAll());
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 28),
+
+                        // PANEL DE ESTADÍSTICAS Y CONTROL
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: cardBgColor,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: borderColor, width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.bar_chart_rounded, color: primaryPurple, size: 22),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Resumen de Estadísticas',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  // Selector de Periodo: Hoy, Semana, Mes
+                                  Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF131510) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: borderColor),
+                                    ),
+                                    child: Row(
+                                      children: ['Hoy', 'Semana', 'Mes'].map((p) {
+                                        final isSel = _selectedStatsPeriod == p;
+                                        return GestureDetector(
+                                          onTap: () => setState(() => _selectedStatsPeriod = p),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: isSel ? primaryPurple : Colors.transparent,
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: Text(
+                                              p,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 12,
+                                                fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
+                                                color: isSel ? Colors.white : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              
+                              // Carrusel de Fechas Interactivas en Desktop
+                              _buildDateCarousel(isDark, primaryPurple),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopMetricCard({
+    required String title,
+    required String value,
+    required String subValue,
+    required IconData icon,
+    required Color accentColor,
+    required Color cardBg,
+    required Color borderColor,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : const Color(0xFF475569),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: accentColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: accentColor, size: 20),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subValue,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: accentColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
 
 
   Widget _buildMobileLayout(BuildContext context) {
