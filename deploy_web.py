@@ -163,7 +163,8 @@ def main():
             
     if not logged_in:
         print("Error: No se pudo iniciar sesión con ningún formato de usuario FTP.")
-        print("Asegúrate de que creaste la cuenta FTP en Hostinger con la contraseña 'Patasca2029@'.")
+        #print("Asegúrate de que creaste la cuenta FTP en Hostinger con la contraseña 'Patasca2029@'.")
+        print("Asegúrate de que creaste la cuenta FTP en Hostinger.")
         sys.exit(1)
         
     # Intentar cambiar al directorio 'sistema' por si el login no es chrooted

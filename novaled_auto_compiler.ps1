@@ -17,9 +17,9 @@ function Build-And-Deploy {
     Write-Host "==========================================================" -ForegroundColor Yellow
     Write-Host " 🔥 DETECTADO CAMBIO EN [$branchName] -> $reason" -ForegroundColor Yellow
     Write-Host "==========================================================" -ForegroundColor Yellow
-    Write-Host "1. Fusionando cambios a master..." -ForegroundColor Yellow
+    Write-Host "1. Fusionando cambios a main..." -ForegroundColor Yellow
     
-    git checkout master
+    git checkout main
     git merge $branchName -m "Merge automatico desde $branchName: $reason"
     
     Write-Host "2. Compilando APK Debug de Flutter..." -ForegroundColor Yellow
@@ -68,8 +68,8 @@ while ($true) {
             break
         }
         
-        # Verificar si hay commits nuevos en la rama del hijo no fusionados en master
-        $unmerged = git log master..$($wt.Branch) --oneline 2>$null
+        # Verificar si hay commits nuevos en la rama del hijo no fusionados en main
+        $unmerged = git log main..$($wt.Branch) --oneline 2>$null
         if ($unmerged) {
             $found = $true
             Build-And-Deploy -branchName $wt.Branch -reason "Se detectaron commits nuevos ($unmerged)"
