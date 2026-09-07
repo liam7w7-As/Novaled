@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "daring-fin-441019-v7",
+  "private_key_id": "a3be65307ac81ead51a83fab675ec4d52a329175",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDjFuKKFLpEvNX0\nO7v4FO55JNQ8cOksrNa1kwZSkD7qag8LV5a3s2JPZQqleiLd3eM1MMk9EULLFQz5\n75IqNdRVJuoClFYevzjKDe5GpwBXEs/t2wd4ub3B7N4v7/zu/ofvNVEl6FQ5R2jP\nlphDMizL1UZyAHTju8XB1V2y07OPeKPCaFy8nYCmg2nTxogRNmrzHQPpzXC93FyG\n4IbmoMA1tPvozWvi3Ytmr3ejJa8Z6+GTf+m8wdlTigL8f6n/Wldw04i2A/PjCLQh\nyzwj9Md9dr5rjxjFh+eZV3R2JrGludbZIgSZUVRB2Muvdoxai+IAUwyM+p8TVZDI\nfPteWP6tAgMBAAECggEABGeq/MkypMcx8kMfXgxP5OcvO73n8/8lSg/gSUU1hzgH\n8y0fhhAzeb1Iw9V27C1T7TH1UVsum8BciFOalvmE1SMEWoj0k7ObXyX+h33RTp8V\ni/RZ9IBL20FkPPNPiXZD/kKfQJg9XAAT2yT9bp5ASrLoIyl5mvpHN3+TSfb7zm5c\nBoP4jBtm9HBNlMv8+o8Z56/DWIeX1QmSTO8eu5EBcGcmtu+ocaRfAh5BVp1zWSpX\nOdYcYnnkjgyfe3Hhg+UoNZyFHR0I+qtSDYA2GfHSQbvGzBOyo3Jve5MI3npaNw/o\nTdvZz0DCXOuCAMouo7IAAGt6aFQBxlNe+qO7dgtLyQKBgQD+31vrJWM6i0WGOdq6\nW8o3MFTveNIChBhOYIA6X50erXBVyCPJim6dc8sY3sojTks/zjx6pDOYZCS3Hzym\nlYCPyZiO6lpiqapcEQYUVMWYw449RwI8xi7bY1OTvXjmHv+Q71Svq/3iFEIdAWPa\n+9oA2deM+pKqSpOSv1zo4ie+ZQKBgQDkGA/N2xoKh+7lJE2d+RGwzuFyX/pmsrY+\nRx2o+Ng7tFn4n8HF7b2wE/coRTsU2/OFMJRkqDt7S7DoK1KgyLb4lYNtDoovKbOV\nEXjdETN4uJeyKDnzE4VdXSEJ2ZwV2fjgt+E773oWQ5COTJHGluazgRsfwXHacAWk\n0tyxA3c2qQKBgGVhybl2rMr73VLwLn5UxtI/Knn7cGZJzzVWE4ukvuYWDYpBy2J+\n61M8XTxuWq/ClBI0YkBSkqd6plQlW8XT0Ejh4wpuVDfMz5RBvU5XDiafGzRqy4wL\nNVZVY0hwZOf8yqIHYYNjgeDtOAM7q1HPPr9559EPV0nf0mXcMwP7+d01AoGAZLOS\n1qmy949IE3ZRpjr+ancL5bkmDg08lIZFPAKRRNq9Fh1CKaZqpsBJ0Eewa+cnvlfS\nTBZSHH8wXXAzDLVQwrMP0SgoLeZVWKzcFY2wkc29e3RzETQ/HxcsrPKcDLGtRVkp\nYZK67fVqbsizW1/n/rwzQ3PeVjg65agKs0P6b/ECgYA0R0GYKDBXOkm0F4U6/GTd\n3B1mQmQkZYXcjGMDPY32x/vUZ1BcAZ4TsJZg+th/be509Vj2lodGQOEBMQOjMNxm\n7YcIFL34ly/majTphJi3ZSKDbxmooZ18J/HgbVX+siT4SO1rLLqyh0evpw8orFm6\ncfNsu+rL1k/jdirKM+8qRQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "app-movil-novaled@daring-fin-441019-v7.iam.gserviceaccount.com",
+  "client_id": "114082059948141542368",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/app-movil-novaled%40daring-fin-441019-v7.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
