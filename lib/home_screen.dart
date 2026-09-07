@@ -913,23 +913,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    // En pantallas grandes (Escritorio / Web monitor ancho), centramos el diseño moderno de forma ergonómica y responsiva
-    if (size.width > 650) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      return Container(
-        color: isDark ? const Color(0xFF0D0E0C) : const Color(0xFFE2E8F0),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 540),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(size.width > 700 ? 16 : 0),
-              child: _buildMobileLayout(context),
-            ),
-          ),
-        ),
-      );
-    }
     return _buildMobileLayout(context);
   }
 
