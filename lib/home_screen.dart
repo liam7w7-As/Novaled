@@ -1473,8 +1473,108 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 20),
                               
-                              // Carrusel de Fechas Interactivas en Desktop
-                              _buildDateCarousel(isDark, primaryPurple),
+                              // Métricas Detalladas con Comparativa y Tendencias
+                              Builder(
+                                builder: (context) {
+                                  DateTime parseDocDate(String? str) {
+                                    if (str == null || str.isEmpty) return DateTime(1970);
+                                    try {
+                                      return DateTime.parse(str);
+                                    } catch (_) {
+                                      final p = str.split(' ')[0].split('/');
+                                      if (p.length == 3) {
+                                        return DateTime(int.parse(p[2]), int.parse(p[1]), int.parse(p[0]));
+                                      }
+                                      return DateTime(1970);
+                                    }
+                                  }
+
+                                  final now = DateTime.now();
+                                  bool isMatchCurrent(DateTime d) {
+                                    if (_selectedStatsPeriod == 'Hoy') {
+                                      return d.year == now.year && d.month == now.month && d.day == now.day;
+                                    } else if (_selectedStatsPeriod == 'Semana') {
+                                      final monday = now.subtract(Duration(days: now.weekday - 1));
+                                      final sunday = monday.add(const Duration(days: 6));
+                                      final dayOnly = DateTime(d.year, d.month, d.day);
+                                      final monOnly = DateTime(monday.year, monday.month, monday.day);
+                                      final sunOnly = DateTime(sunday.year, sunday.month, sunday.day);
+                                      return !dayOnly.isBefore(monOnly) && !dayOnly.isAfter(sunOnly);
+                                    } else {
+                                      return d.year == now.year && d.month == now.month;
+                                    }
+                                  }
+
+                                  final allVentas = _getVentasEfectivas();
+                                  final filteredVentas = allVentas.where((doc) => isMatchCurrent(parseDocDate(doc['fecha']?.toString()))).toList();
+                                  final filteredQuotes = _cotizaciones.where((doc) => isMatchCurrent(parseDocDate(doc['fecha']?.toString()))).toList();
+                                  final approvedCount = filteredQuotes.where((doc) {
+                                    final st = (doc['estado'] ?? '').toString().toLowerCase();
+                                    return st == 'aprobada' || st == 'completado';
+                                  }).length;
+                                  final porCobrarCount = _notasEntrega.where((doc) {
+                                    final total = (doc['total'] as num?)?.toDouble() ?? 0.0;
+                                    final cancelado = (doc['saldo_cancelado'] as num?)?.toDouble() ?? 0.0;
+                                    return (total - cancelado) > 0.01;
+                                  }).length;
+
+                                  return Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildNewStatCard(
+                                          iconPath: 'Iconos/nuevo 13 8 26/inicio/cotizaciones.png',
+                                          fallbackIcon: Icons.description_outlined,
+                                          value: '',
+                                          label: 'Cotizaciones',
+                                          trend: 'Activas',
+                                          isUp: true,
+                                          primaryColor: primaryPurple,
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: _buildNewStatCard(
+                                          iconPath: 'Iconos/nuevo 13 8 26/inicio/aprobados.png',
+                                          fallbackIcon: Icons.check_circle_outline_rounded,
+                                          value: '',
+                                          label: 'Aprobadas',
+                                          trend: 'Ventas cerradas',
+                                          isUp: true,
+                                          primaryColor: const Color(0xFF10B981),
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: _buildNewStatCard(
+                                          iconPath: 'Iconos/nuevo 13 8 26/inicio/ventas.png',
+                                          fallbackIcon: Icons.shopping_bag_outlined,
+                                          value: '',
+                                          label: 'Ventas Efectivas',
+                                          trend: 'Cobros realizados',
+                                          isUp: true,
+                                          primaryColor: primaryPurple,
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: _buildNewStatCard(
+                                          iconPath: 'Iconos/nuevo 13 8 26/inicio/por cobrar.png',
+                                          fallbackIcon: Icons.account_balance_wallet_outlined,
+                                          value: '',
+                                          label: 'Por Cobrar',
+                                          trend: 'Pendientes',
+                                          isUp: false,
+                                          primaryColor: const Color(0xFF00ADEF),
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
                             ],
                           ),
                         ),
