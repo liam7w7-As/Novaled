@@ -1,15 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'crear_nota_entrega_screen.dart';
 import '../database_helper.dart';
 import '../../drive_service.dart';
 import 'dart:convert';
-import 'package:printing/printing.dart';
-import '../services/pdf_service.dart';
 import '../models/item_cotizacion.dart';
-import '../widgets/zoomable_pdf_preview.dart';
 import '../services/sync_service.dart';
 import 'cotizacion_vista_previa_screen.dart';
+import '../../shared_widgets/shared_widgets.dart';
 
 class NotasEntregaScreen extends StatefulWidget {
   final bool hideAppBar;
@@ -349,8 +346,6 @@ class _NotasEntregaScreenState extends State<NotasEntregaScreen> {
   Future<void> _verPDFNota(Map<String, dynamic> nota, int displayId) async {
     if (!mounted) return;
 
-    bool dialogColor = true;
-
     // Decodificar itemsJson
     final List<dynamic> itemsList = jsonDecode(nota['itemsJson'] ?? '[]');
     final List<ItemCotizacion> items = itemsList.map((itemMap) => ItemCotizacion.fromMap(itemMap)).toList();
@@ -365,8 +360,6 @@ class _NotasEntregaScreenState extends State<NotasEntregaScreen> {
     final int docId = displayId;
     final bool incluyeFirmaEmpresa = (nota['incluyeFirmaEmpresa'] ?? 0) == 1;
     final bool incluyeFirmaCliente = (nota['incluyeFirmaCliente'] ?? 0) == 1;
-    final bool mostrarTerminos = (nota['mostrarTerminos'] ?? 1) == 1;
-    final bool mostrarAhorro = false; // Default a false
     final String fecha = nota['fecha'] ?? "";
 
     Navigator.push(
@@ -493,24 +486,11 @@ class _NotasEntregaScreenState extends State<NotasEntregaScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _filterNotas,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-              decoration: InputDecoration(
-                hintText: "Buscar por cliente o #...",
-                hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.3) : Colors.black38),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF00ADEF)),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF1F2833) : Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
+          UniversalSearchBar(
+            controller: _searchController,
+            onChanged: _filterNotas,
+            hintText: "Buscar por cliente o #...",
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           Expanded(
             child: RefreshIndicator(
@@ -547,226 +527,42 @@ class _NotasEntregaScreenState extends State<NotasEntregaScreen> {
                           itemBuilder: (context, index) {
                             final nota = _filteredNotas[index];
                             final displayId = _getDisplayId(nota);
-                            return _SlidableNotaTile(
-                              nota: nota,
+                            final totalNum = (nota['total'] as num?)?.toDouble() ?? 0.0;
+                            final totalStr = totalNum.toStringAsFixed(2);
+                            final fechaStr = nota['fecha']?.toString().split(' ')[0] ?? '';
+                            final cliente = (nota['clienteNombre']?.toString().trim().isNotEmpty ?? false)
+                                ? nota['clienteNombre'].toString().trim()
+                                : "Sin Cliente";
+
+                            return DocumentSlidableTile(
+                              title: cliente,
                               displayId: displayId,
+                              monto: "Bs. $totalStr",
+                              fecha: fechaStr,
+                              vendedor: nota['vendedor']?.toString(),
+                              sucursal: nota['sucursal']?.toString(),
                               onTap: () => _editarNota(nota, displayId),
                               onLongPress: () => _mostrarOpciones(nota, displayId),
-                              onDelete: () => _confirmarEliminacion(nota),
-                              onDuplicate: () => _duplicarNota(nota),
-                              onIconTap: () => _verPDFNota(nota, displayId),
+                              actions: [
+                                SlidableActionItem(
+                                  icon: Icons.picture_as_pdf_outlined,
+                                  label: "PDF",
+                                  onTap: () => _verPDFNota(nota, displayId),
+                                ),
+                                SlidableActionItem(
+                                  icon: Icons.copy_outlined,
+                                  label: "Copiar",
+                                  onTap: () => _duplicarNota(nota),
+                                ),
+                                SlidableActionItem(
+                                  icon: Icons.delete_outline_rounded,
+                                  label: "Borrar",
+                                  onTap: () => _confirmarEliminacion(nota),
+                                ),
+                              ],
                             );
                           },
                         ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SlidableNotaTile extends StatefulWidget {
-  final Map<String, dynamic> nota;
-  final int displayId;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-  final VoidCallback onDelete;
-  final VoidCallback onDuplicate;
-  final VoidCallback onIconTap;
-
-  const _SlidableNotaTile({
-    required this.nota,
-    required this.displayId,
-    required this.onTap,
-    required this.onLongPress,
-    required this.onDelete,
-    required this.onDuplicate,
-    required this.onIconTap,
-  });
-
-  @override
-  State<_SlidableNotaTile> createState() => _SlidableNotaTileState();
-}
-
-class _SlidableNotaTileState extends State<_SlidableNotaTile> {
-  double _offset = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: EdgeInsets.zero,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // BOTÓN DUPLICAR
-                InkWell(
-                  onTap: () {
-                    setState(() => _offset = 0);
-                    widget.onDuplicate();
-                  },
-                  child: Container(
-                    width: 80,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: Colors.blueAccent,
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.copy_outlined, color: Colors.white, size: 24),
-                        Text("COPIAR",
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 9)),
-                      ],
-                    ),
-                  ),
-                ),
-                // BOTÓN BORRAR
-                InkWell(
-                  onTap: () {
-                    setState(() => _offset = 0);
-                    widget.onDelete();
-                  },
-                  child: Container(
-                    width: 80,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.delete_outline, color: Colors.white, size: 24),
-                        Text("BORRAR",
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 9)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onHorizontalDragUpdate: (details) {
-              setState(() {
-                _offset += details.delta.dx;
-                if (_offset > 0) _offset = 0;
-                if (_offset < -160) _offset = -160;
-              });
-            },
-            onHorizontalDragEnd: (details) {
-              setState(() {
-                if (_offset < -80) {
-                  _offset = -160;
-                } else {
-                  _offset = 0;
-                }
-              });
-            },
-            child: Transform.translate(
-              offset: Offset(_offset, 0),
-              child: InkWell(
-                onTap: _offset == 0 ? widget.onTap : () => setState(() => _offset = 0),
-                onLongPress: widget.onLongPress,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF161A22) : Colors.white,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: isDark ? Colors.white10 : Colors.black12,
-                        width: 0.8,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      // ICONO DE DOCUMENTO: Abre el PDF al hacer clic
-                      GestureDetector(
-                        onTap: widget.onIconTap,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00ADEF).withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF00ADEF).withOpacity(0.2),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Icon(Icons.assignment_turned_in_rounded, color: const Color(0xFF00ADEF).withOpacity(0.3), size: 28),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "#${widget.displayId}",
-                              style: TextStyle(
-                                  color: const Color(0xFF00ADEF).withOpacity(0.8),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "${widget.nota['clienteNombre']}".toUpperCase(),
-                              style: TextStyle(
-                                  color: isDark ? Colors.white : Colors.black87,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 16,
-                                  letterSpacing: 0.5),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Lado derecho: Fecha arriba disimulada, Dinero abajo
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          // Fecha arriba disimulada
-                          Text(
-                            widget.nota['fecha']?.toString().split(' ')[0] ?? '',
-                            style: TextStyle(
-                              color: isDark ? Colors.white.withOpacity(0.3) : Colors.black38,
-                              fontSize: 10,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: "${widget.nota['total']?.toStringAsFixed(2)}",
-                                  style: TextStyle(
-                                    color: isDark ? Colors.white : Colors.black87,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: " Bs",
-                                  style: TextStyle(
-                                    color: isDark ? Colors.white : Colors.black87,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ),
           ),
         ],
