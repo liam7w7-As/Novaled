@@ -6,6 +6,7 @@ import '../../core/theme/app_decorations.dart';
 class TotalSummaryCard extends StatelessWidget {
   final double subtotal;
   final double descuento;
+  final double ahorro;
   final double impuesto;
   final double total;
   final double? saldoCancelado;
@@ -16,6 +17,7 @@ class TotalSummaryCard extends StatelessWidget {
     super.key,
     required this.subtotal,
     this.descuento = 0.0,
+    this.ahorro = 0.0,
     this.impuesto = 0.0,
     required this.total,
     this.saldoCancelado,
@@ -44,13 +46,22 @@ class TotalSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _buildRow("Subtotal", "${subtotal.toStringAsFixed(2)} $moneda", isDark),
+          if (ahorro > 0) ...[
+            const SizedBox(height: 8),
+            _buildRow(
+              "Ahorro de Productos",
+              "- ${ahorro.toStringAsFixed(2)} $moneda",
+              isDark,
+              valueColor: AppColors.stateOrangeWarning,
+            ),
+          ],
           if (descuento > 0) ...[
             const SizedBox(height: 8),
             _buildRow(
-              "Descuento",
+              "Descuento Global",
               "- ${descuento.toStringAsFixed(2)} $moneda",
               isDark,
-              valueColor: AppColors.stateOrangeWarning,
+              valueColor: AppColors.stateRedError,
             ),
           ],
           if (impuesto > 0) ...[
