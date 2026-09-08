@@ -29,6 +29,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'crear_cotizacion_escaneada_screen.dart';
 import 'cotizacion_vista_previa_screen.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/app_decorations.dart';
+import '../../shared_widgets/modals/select_cliente_modal.dart';
+import '../../shared_widgets/modals/select_sucursal_modal.dart';
+import '../../shared_widgets/cards/total_summary_card.dart';
+import '../../shared_widgets/buttons/primary_action_button.dart';
 
 
 class CrearCotizacionScreen extends StatefulWidget {
@@ -174,76 +181,13 @@ class _CrearCotizacionScreenState extends State<CrearCotizacionScreen> {
   }
 
   Future<void> _mostrarSelectorSucursal() async {
-    await _loadVendedoresYSucursales();
-    if (!mounted) return;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.70),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E222B) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Text(
-                "Seleccionar Sucursal",
-                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-              ),
-              const SizedBox(height: 12),
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: _listaSucursales.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (ctx, idx) {
-                    final item = _listaSucursales[idx];
-                    final isSel = item == _sucursalSeleccionada;
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      title: Text(
-                        item,
-                        style: GoogleFonts.poppins(
-                          fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                          color: isSel ? Theme.of(context).primaryColor : (isDark ? Colors.white : Colors.black87),
-                        ),
-                      ),
-                      trailing: isSel ? Icon(Icons.check_circle_rounded, color: Theme.of(context).primaryColor) : null,
-                      onTap: () {
-                        setState(() {
-                          _sucursalSeleccionada = item;
-                        });
-                        _onDataChangedAutoSave();
-                        Navigator.pop(ctx);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    final selected = await SelectSucursalModal.show(context, initialSelected: _sucursalSeleccionada);
+    if (selected != null && mounted) {
+      setState(() {
+        _sucursalSeleccionada = selected;
+      });
+      _onDataChangedAutoSave();
+    }
   }
 
   Widget _buildVendedorSucursalCard(bool isDark, Color textColor, Color labelColor) {
@@ -1191,9 +1135,10 @@ class _CrearCotizacionScreenState extends State<CrearCotizacionScreen> {
     Widget buildCleanField({
       required String label,
       required TextEditingController controller,
-      String? hintText,
+      required String hintText,
       TextInputType keyboardType = TextInputType.text,
       ValueChanged<String>? onChanged,
+      Widget? suffixIcon,
     }) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1219,6 +1164,7 @@ class _CrearCotizacionScreenState extends State<CrearCotizacionScreen> {
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
               hintText: hintText,
               hintStyle: GoogleFonts.poppins(fontSize: 16, color: labelColor),
+              suffixIcon: suffixIcon,
               border: UnderlineInputBorder(
                 borderSide: BorderSide(color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
               ),
@@ -1245,6 +1191,22 @@ class _CrearCotizacionScreenState extends State<CrearCotizacionScreen> {
                 label: "Cliente / Empresa",
                 controller: _clienteNombreCtrl,
                 hintText: "",
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.contacts_rounded, color: AppColors.primaryPurple, size: 22),
+                  tooltip: "Buscar / Registrar Cliente",
+                  onPressed: () async {
+                    final cli = await SelectClienteModal.show(context);
+                    if (cli != null && mounted) {
+                      setState(() {
+                        _clienteNombreCtrl.text = cli.nombreCompania;
+                        _clienteTelefonoCtrl.text = cli.telefono;
+                        _clienteCorreoCtrl.text = cli.correo;
+                        _showClientSuggestions = false;
+                      });
+                      _onDataChangedAutoSave();
+                    }
+                  },
+                ),
                 onChanged: (val) {
                   _filtrarSugeridosClientes(val);
                   setState(() {

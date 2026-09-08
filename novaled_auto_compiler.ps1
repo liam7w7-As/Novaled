@@ -15,7 +15,8 @@ function Build-And-Deploy {
     [console]::beep(1000, 500)
     Write-Host ""
     Write-Host "==========================================================" -ForegroundColor Yellow
-    Write-Host " 🔥 DETECTADO CAMBIO EN [$branchName] -> $reason" -ForegroundColor Yellow
+    Write-Host " 🔥 DETECTA
+    DO CAMBIO EN [$branchName] -> $reason" -ForegroundColor Yellow
     Write-Host "==========================================================" -ForegroundColor Yellow
     Write-Host "1. Fusionando cambios a main..." -ForegroundColor Yellow
     

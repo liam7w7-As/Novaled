@@ -222,7 +222,7 @@ class _SelectClienteModalState extends State<SelectClienteModal> {
                             )
                           : ListView.separated(
                               itemCount: _filteredClientes.length,
-                              separatorBuilder: (_, __) => Divider(
+                              separatorBuilder: (context, index) => Divider(
                                 height: 1,
                                 color: AppColors.border(isDark),
                               ),
