@@ -8,6 +8,7 @@ import '../models/articulo.dart';
 import '../models/item_cotizacion.dart';
 import '../../drive_service.dart';
 import '../services/sync_service.dart';
+import '../../shared_widgets/shared_widgets.dart';
 
 class AgregarArticuloScreen extends StatefulWidget {
   final ItemCotizacion? itemAEditar;
@@ -260,204 +261,15 @@ class _AgregarArticuloScreenState extends State<AgregarArticuloScreen> {
     }
   }
 
-  void _mostrarSelectorUnidades() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E222B) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            final textColor = isDark ? Colors.white : Colors.black87;
-            return Padding(
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 16,
-                right: 16,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "UNIDADES DE MEDIDA",
-                        style: TextStyle(
-                          color: Color(0xFF00ADEF),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add, color: Color(0xFF00ADEF)),
-                        onPressed: () async {
-                          final nuevo = await _mostrarDialogoNuevaUnidad();
-                          if (nuevo != null && nuevo.isNotEmpty) {
-                            final dbHelper = DatabaseHelper.instance;
-                            await dbHelper.insertUnidadMedida({'nombre': nuevo});
-                            await _syncUnidades(silent: true);
-                            setModalState(() {});
-                          }
-                        },
-                        tooltip: "Agregar Unidad",
-                      ),
-                    ],
-                  ),
-                  const Divider(color: Colors.white10),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _unidades.length,
-                      itemBuilder: (context, index) {
-                        final u = _unidades[index];
-                        return ListTile(
-                          dense: true,
-                          title: Text(u, style: TextStyle(color: textColor, fontSize: 14)),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blueAccent, size: 18),
-                                onPressed: () async {
-                                  final nuevoNombre = await _mostrarDialogoEditarUnidad(u);
-                                  if (nuevoNombre != null && nuevoNombre.isNotEmpty) {
-                                    final dbHelper = DatabaseHelper.instance;
-                                    final rawUnits = await dbHelper.queryAllUnidadesMedida();
-                                    final item = rawUnits.firstWhere((element) => element['nombre'] == u, orElse: () => <String, dynamic>{});
-                                    if (item.isNotEmpty) {
-                                      final updated = Map<String, dynamic>.from(item);
-                                      updated['nombre'] = nuevoNombre;
-                                      await dbHelper.updateUnidadMedida(updated);
-                                      if (updated['folderId'] != null) {
-                                        await _drive.syncItemToDrive('unidades_medida', updated);
-                                      }
-                                      await _syncUnidades(silent: true);
-                                      setModalState(() {});
-                                    }
-                                  }
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
-                                onPressed: () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (c) => AlertDialog(
-                                      backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-                                      title: Text("¿Eliminar unidad?", style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
-                                      content: Text("¿Estás seguro de que deseas eliminar la unidad '$u'?", style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
-                                      actions: [
-                                        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text("CANCELAR")),
-                                        TextButton(onPressed: () => Navigator.pop(c, true), child: const Text("ELIMINAR", style: TextStyle(color: Colors.red))),
-                                      ],
-                                    ),
-                                  );
-                                  if (confirm == true) {
-                                    final dbHelper = DatabaseHelper.instance;
-                                    final rawUnits = await dbHelper.queryAllUnidadesMedida();
-                                    final item = rawUnits.firstWhere((element) => element['nombre'] == u, orElse: () => <String, dynamic>{});
-                                    if (item.isNotEmpty) {
-                                      await dbHelper.deleteUnidadMedida(item['id']);
-                                      if (item['folderId'] != null && item['folderId'].toString().isNotEmpty) {
-                                        try {
-                                          await _drive.deleteFile(item['folderId'].toString());
-                                        } catch (e) {
-                                          debugPrint("Error borrando unidad en Drive: $e");
-                                        }
-                                      }
-                                      await _syncUnidades(silent: true);
-                                      setModalState(() {});
-                                    }
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _seleccionUnidad = u;
-                            });
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+  void _mostrarSelectorUnidades() async {
+    final sel = await SelectUnidadMedidaModal.show(context, seleccionInicial: _seleccionUnidad);
+    if (sel != null && mounted) {
+      setState(() {
+        _seleccionUnidad = sel;
+      });
+    }
   }
 
-  Future<String?> _mostrarDialogoNuevaUnidad() async {
-    final ctrl = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-          title: Text("Nueva Unidad de Medida", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16)),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-            decoration: InputDecoration(
-              hintText: "Ej: Litros, Paquete...",
-              hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black38),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
-            TextButton(
-              onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-              child: const Text("CREAR", style: TextStyle(color: Color(0xFF00ADEF), fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<String?> _mostrarDialogoEditarUnidad(String nombreActual) async {
-    final ctrl = TextEditingController(text: nombreActual);
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-          title: Text("Editar Unidad de Medida", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16)),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-            decoration: InputDecoration(
-              labelText: "Nombre de Unidad",
-              labelStyle: const TextStyle(color: Color(0xFF00ADEF)),
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey)),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
-            TextButton(
-              onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-              child: const Text("GUARDAR", style: TextStyle(color: Color(0xFF00ADEF), fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Widget _buildCompactEditField(TextEditingController ctrl, String label, {bool isNumber = false, String? hintText, void Function(String)? onChanged}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

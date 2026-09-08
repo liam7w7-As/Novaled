@@ -28,13 +28,7 @@ import '../tenant_helper.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_decorations.dart';
-import '../../shared_widgets/modals/select_cliente_modal.dart';
-import '../../shared_widgets/modals/select_sucursal_modal.dart';
-import '../../shared_widgets/cards/total_summary_card.dart';
-import '../../shared_widgets/cards/slidable_item_card.dart';
-import '../../shared_widgets/buttons/primary_action_button.dart';
-import '../../shared_widgets/modals/select_articulo_modal.dart';
-import '../../shared_widgets/modals/select_unidad_medida_modal.dart';
+import '../../shared_widgets/shared_widgets.dart';
 
 
 class CrearNotaEntregaScreen extends StatefulWidget {
