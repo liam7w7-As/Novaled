@@ -31,7 +31,10 @@ import '../../core/theme/app_decorations.dart';
 import '../../shared_widgets/modals/select_cliente_modal.dart';
 import '../../shared_widgets/modals/select_sucursal_modal.dart';
 import '../../shared_widgets/cards/total_summary_card.dart';
+import '../../shared_widgets/cards/slidable_item_card.dart';
 import '../../shared_widgets/buttons/primary_action_button.dart';
+import '../../shared_widgets/modals/select_articulo_modal.dart';
+import '../../shared_widgets/modals/select_unidad_medida_modal.dart';
 
 
 class CrearNotaEntregaScreen extends StatefulWidget {
@@ -2592,11 +2595,14 @@ class _CrearNotaEntregaScreenState extends State<CrearNotaEntregaScreen> {
         ..._items.asMap().entries.map((entry) {
           int index = entry.key;
           ItemCotizacion item = entry.value;
-          return _SlidableItemTile(
+          return SlidableItemCard(
             key: ValueKey(item.uniqueId),
             item: item,
             index: index,
-            onTap: () async {
+            isDark: isDark,
+            onSelect: () {},
+            onClose: () {},
+            onEdit: () async {
               final List<ItemCotizacion>? result = await Navigator.push<List<ItemCotizacion>>(
                 context,
                 MaterialPageRoute(
@@ -2614,6 +2620,18 @@ class _CrearNotaEntregaScreenState extends State<CrearNotaEntregaScreen> {
             onDelete: () {
               setState(() {
                 _items.removeAt(index);
+                _isSaved = false;
+              });
+              _guardarNotaSilently();
+            },
+            onDuplicate: () {
+              setState(() {
+                final cloned = ItemCotizacion(
+                  articulo: item.articulo.copyWith(),
+                  precioOriginal: item.precioOriginal,
+                  cantidad: item.cantidad,
+                );
+                _items.insert(index + 1, cloned);
                 _isSaved = false;
               });
               _guardarNotaSilently();
@@ -3956,229 +3974,3 @@ class _GlowingCheckButtonState extends State<_GlowingCheckButton> with SingleTic
   }
 }
 
-class _SlidableItemTile extends StatefulWidget {
-  final ItemCotizacion item;
-  final int index;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-  final VoidCallback onMove;
-
-  const _SlidableItemTile({
-    super.key,
-    required this.item,
-    required this.index,
-    required this.onTap,
-    required this.onDelete,
-    required this.onMove,
-  });
-
-  @override
-  State<_SlidableItemTile> createState() => _SlidableItemTileState();
-}
-
-class _SlidableItemTileState extends State<_SlidableItemTile> {
-  double _offset = 0;
-  final double maxOffset = -140;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final item = widget.item;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF161A22) : Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? const Color(0xFF1E293B) : Colors.grey[200]!,
-            width: 1,
-          ),
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                InkWell(
-                  onTap: () {
-                    setState(() => _offset = 0);
-                    widget.onMove();
-                  },
-                  child: Container(
-                    width: 70,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: Colors.orangeAccent,
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.swap_vert_rounded, color: Colors.white, size: 20),
-                        SizedBox(height: 4),
-                        Text(
-                          "MOVER",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: () {
-                    setState(() => _offset = 0);
-                    widget.onDelete();
-                  },
-                  child: Container(
-                    width: 70,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
-                        SizedBox(height: 4),
-                        Text(
-                          "BORRAR",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onHorizontalDragUpdate: (details) {
-              setState(() {
-                _offset += details.delta.dx;
-                if (_offset > 0) _offset = 0;
-                if (_offset < maxOffset) _offset = maxOffset;
-              });
-            },
-            onHorizontalDragEnd: (details) {
-              setState(() {
-                if (_offset < maxOffset / 2) {
-                  _offset = maxOffset;
-                } else {
-                  _offset = 0;
-                }
-              });
-            },
-            child: Transform.translate(
-              offset: Offset(_offset, 0),
-              child: Material(
-                color: isDark ? const Color(0xFF161A22) : Colors.white,
-                child: InkWell(
-                  onTap: _offset == 0 ? widget.onTap : () => setState(() => _offset = 0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    decoration: const BoxDecoration(),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            "#${widget.index + 1}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF00ADEF),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.articulo.nombre,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                  fontSize: 14,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Text(
-                                    "${item.articulo.precio} Bs x ${item.cantidad} (${item.articulo.unidad})",
-                                    style: TextStyle(
-                                      color: isDark ? Colors.grey[400] : Colors.black54,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  if (item.ahorro > 0) ...[
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                      decoration: BoxDecoration(
-                                        color: Colors.orange.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                                      ),
-                                      child: Text(
-                                        "-${((item.precioOriginal - item.articulo.precio) / item.precioOriginal * 100).toStringAsFixed(0)}%",
-                                        style: const TextStyle(
-                                          color: Colors.orangeAccent,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              if (item.articulo.unidadDetalle.isNotEmpty) ...[
-                                const SizedBox(height: 3),
-                                Text(
-                                  item.articulo.unidadDetalle,
-                                  style: TextStyle(
-                                    color: isDark ? Colors.grey[500] : Colors.black45,
-                                    fontSize: 10,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          "${item.total.toStringAsFixed(2)} Bs",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF00ADEF),
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
